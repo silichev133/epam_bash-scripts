@@ -2,9 +2,6 @@
 
 name=mongod
 pid=$(ps -ef | grep -v grep | grep mongod | awk '{print $2}')
-port=$(lsof -i | awk '/LISTEN/{print substr($9, 11)}')
-port=$(lsof -i | awk '/LISTEN/{print substr($9, 11)}')
-net_stat=$(sudo netstat -ap | grep 27017)
 mongo="mongo"
 root="root"
 
@@ -19,7 +16,9 @@ status)
 		echo "PID: $pid"
 		memory=$(ps -e -o pid,vsz | grep -v grep | grep $pid | awk '{print $2}')
 		echo "Memory: $memory K"
+		port=$(lsof -i | awk '/LISTEN/{print substr($9, 11)}')
 		echo "Port: $port"
+		net_stat=$(sudo netstat -ap | grep 27017)
 		echo "$net_stat"
 	fi
 ;;
