@@ -1,0 +1,65 @@
+#!/bin/bash
+
+name=mongod
+pid=$(ps -ef | grep -v grep | grep mongod | awk '{print $2}')
+#memory=$(ps -e -o pid,vsz | grep -v grep | grep $pid | awk '{print $2}')
+port=$(lsof -i | awk '/LISTEN/{print substr($9, 11)}')
+net_stat=$(sudo netstat -ap | grep 27017)
+mongo="mongo"
+root="root"
+
+case "$1" in 
+
+status) 
+	if [ -z $pid ] 
+	then
+		echo "Process is stopped"
+	else 
+		echo "Process is running."
+		echo "PID: $pid"
+		memory=$(ps -e -o pid,vsz | grep -v grep | grep $pid | awk '{print $2}')
+		echo "Memory: $memory K"
+		echo "Port: $port"
+		echo "$net_stat"
+	fi
+;;
+start) 
+	if [ -z $pid ]
+	then
+		if [ $USER = $root ]
+		then
+			runuser -l mongo -c 'mongod --config /etc/mongod.conf'
+			pid=$(ps -ef | grep -v grep | grep mongod | awk '{print $2}')
+			port=$(lsof -i | awk '/LISTEN/{print substr($9, 11)}')
+			echo "$pid is running on port $port"
+		elif [ $USER != $mongo ]
+		then 
+			su - mongo -c 'mongod --config /etc/mongod.conf'
+			pid=$(ps -ef | grep -v grep | grep mongod | awk '{print $2}')
+			port=$(lsof -i | awk '/LISTEN/{print substr($9, 11)}')
+			echo "$pid is running on port $port"
+		else
+			$name --config /etc/mongod.conf
+			pid=$(ps -ef | grep -v grep | grep mongod | awk '{print $2}')
+			port=$(lsof -i | awk '/LISTEN/{print substr($9, 11)}')
+			echo "$pid is running on port $port"
+		fi
+	else
+		echo "Process is already running"	
+	fi
+;;
+
+stop) 
+	if [ -z $pid ]
+	then
+		echo "Procces already stopped"
+	else 
+		kill -HUP $pid
+		echo "Process was stoped"
+	fi
+;;
+
+*)
+	echo "Please usage $0 <start|stop|status>"
+;; 
+esac
